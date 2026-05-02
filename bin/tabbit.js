@@ -14,6 +14,7 @@ const { config } = require('../src/commands/config');
 const { logout } = require('../src/commands/logout');
 const { sessions } = require('../src/commands/sessions');
 const { chat } = require('../src/commands/chat');
+const { export: exportCmd } = require('../src/commands/export');
 
 const program = new Command();
 
@@ -57,5 +58,10 @@ program
   .command('chat')
   .description('进入多轮对话模式')
   .action(chat);
+
+program
+  .command('export [sessionId]')
+  .description('导出对话历史为 Markdown 文件')
+  .action(exportCmd);
 
 program.parse();

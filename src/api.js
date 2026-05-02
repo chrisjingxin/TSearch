@@ -304,6 +304,85 @@ async function fetchSessions(page = 1, size = 50) {
   return [];
 }
 
+async function fetchMessages(sessionId) {
+  const { cookieHeader } = loadCredentials();
+
+  const res = await fetch(`${BASE_URL}/chat/${sessionId}?_rsc=12345`, {
+    headers: {
+      ...buildHeaders(`/chat/${sessionId}`, cookieHeader),
+      'rsc': '1',
+    },
+  });
+
+  if (res.status === 401) {
+    throw new Error('Session expired. Run `tabbit login` again.');
+  }
+  if (!res.ok) {
+    throw new Error(`Failed to fetch messages: ${res.status}`);
+  }
+
+  const text = await res.text();
+
+  // Parse RSC response
+  // T blocks can be at start of line or embedded in line after other content
+  const tBlocks = {};
+  const tBlockPattern = /([0-9a-f]+):T[0-9a-f]+,([^]*?)(?=\n|$|(?=[0-9a-f]+:T[0-9a-f]+,))/g;
+  let match;
+  while ((match = tBlockPattern.exec(text)) !== null) {
+    tBlocks[match[1]] = match[2];
+  }
+
+  // Also try line-by-line extraction for blocks at start of lines
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const lineMatch = line.match(/^([0-9a-f]+):T[0-9a-f]+,(.*)/);
+    if (lineMatch) {
+      tBlocks[lineMatch[1]] = lineMatch[2];
+    }
+    // Also check for T blocks embedded after other content
+    const embeddedMatch = line.match(/([0-9a-f]+):T[0-9a-f]+,(.*)/);
+    if (embeddedMatch && !tBlocks[embeddedMatch[1]]) {
+      tBlocks[embeddedMatch[1]] = embeddedMatch[2];
+    }
+  }
+
+  // Extract messages array
+  const messagesStart = text.indexOf('"messages":[{');
+  if (messagesStart === -1) return [];
+
+  // Find the end of the array by looking for ],"sessionTitle"
+  const sessionTitleIndex = text.indexOf('],"sessionTitle"', messagesStart);
+  if (sessionTitleIndex === -1) return [];
+
+  // Extract the array content
+  const arrayStart = messagesStart + 11; // Length of '"messages":['
+  const messagesStr = text.slice(arrayStart, sessionTitleIndex + 1);
+
+  try {
+    const messagesJson = JSON.parse(messagesStr);
+    const result = [];
+
+    for (const msg of messagesJson) {
+      if (msg.type === 'user') {
+        result.push({ role: 'user', content: msg.content });
+      } else if (msg.type === 'assistant') {
+        // AI reply content is a reference like "$1a"
+        const ref = msg.messages?.[0]?.content;
+        if (ref && ref.startsWith('$')) {
+          const key = ref.slice(1);
+          const content = tBlocks[key] || '(内容解析失败)';
+          result.push({ role: 'assistant', content });
+        }
+      }
+    }
+
+    return result;
+  } catch {
+    // Fallback: return T blocks as assistant messages
+    return Object.values(tBlocks).map(content => ({ role: 'assistant', content }));
+  }
+}
+
 async function listModels() {
   const { cookieHeader } = loadCredentials();
   const spinner = ora('正在获取模型列表...').start();
@@ -321,4 +400,4 @@ async function listModels() {
   console.log('\n使用方式: tabbit search -m <模型名> "搜索内容"');
 }
 
-module.exports = { search, listModels, fetchModels, fetchSessions, sendMessage, createChatSession, parseSSEStream, loadCredentials };
+module.exports = { search, listModels, fetchModels, fetchSessions, fetchMessages, sendMessage, createChatSession, parseSSEStream, loadCredentials };
