@@ -1,0 +1,24 @@
+{
+  "name": "tabbit-cli",
+  "version": "0.1.0",
+  "description": "CLI tool for Tabbit browser",
+  "bin": {
+    "tabbit": "./bin/tabbit.js"
+  },
+  "scripts": {},
+  "keywords": [
+    "tabbit",
+    "browser",
+    "cli"
+  ],
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "inquirer": "^13.4.2",
+    "marked": "^15.0.12",
+    "marked-terminal": "^7.3.0",
+    "ora": "^9.4.0",
+    "ws": "^8.20.0"
+  }
+}
