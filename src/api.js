@@ -323,27 +323,21 @@ async function fetchMessages(sessionId) {
 
   const text = await res.text();
 
-  // Parse RSC response
-  // T blocks can be at start of line or embedded in line after other content
+  // Parse RSC response - extract T blocks
+  // T block format: {id}:T{hex_byte_length},{utf8_content}
+  // The hex value after T is the exact byte count of the markdown content
+  const buf = Buffer.from(text, 'utf-8');
   const tBlocks = {};
-  const tBlockPattern = /([0-9a-f]+):T[0-9a-f]+,([^]*?)(?=\n|$|(?=[0-9a-f]+:T[0-9a-f]+,))/g;
-  let match;
-  while ((match = tBlockPattern.exec(text)) !== null) {
-    tBlocks[match[1]] = match[2];
-  }
+  const tBlockPattern = /([0-9a-f]+):T([0-9a-f]+),/g;
+  let tMatch;
 
-  // Also try line-by-line extraction for blocks at start of lines
-  const lines = text.split('\n');
-  for (const line of lines) {
-    const lineMatch = line.match(/^([0-9a-f]+):T[0-9a-f]+,(.*)/);
-    if (lineMatch) {
-      tBlocks[lineMatch[1]] = lineMatch[2];
-    }
-    // Also check for T blocks embedded after other content
-    const embeddedMatch = line.match(/([0-9a-f]+):T[0-9a-f]+,(.*)/);
-    if (embeddedMatch && !tBlocks[embeddedMatch[1]]) {
-      tBlocks[embeddedMatch[1]] = embeddedMatch[2];
-    }
+  while ((tMatch = tBlockPattern.exec(text)) !== null) {
+    const id = tMatch[1];
+    const byteLength = parseInt(tMatch[2], 16);
+    const contentStartByte = Buffer.byteLength(text.slice(0, tMatch.index + tMatch[0].length), 'utf-8');
+    const contentBuf = buf.slice(contentStartByte, contentStartByte + byteLength);
+    const content = contentBuf.toString('utf-8').trim();
+    if (content) tBlocks[id] = content;
   }
 
   // Extract messages array
