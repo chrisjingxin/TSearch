@@ -360,12 +360,22 @@ async function fetchMessages(sessionId) {
       if (msg.type === 'user') {
         result.push({ role: 'user', content: msg.content });
       } else if (msg.type === 'assistant') {
-        // AI reply content is a reference like "$1a"
-        const ref = msg.messages?.[0]?.content;
-        if (ref && ref.startsWith('$')) {
-          const key = ref.slice(1);
-          const content = tBlocks[key] || '(内容解析失败)';
-          result.push({ role: 'assistant', content });
+        // Find the last assistant sub-message with a T block reference (the final reply)
+        const subMessages = msg.messages || [];
+        let finalContent = '';
+        for (const sub of subMessages) {
+          if (sub.type === 'assistant' && sub.content) {
+            const ref = sub.content;
+            if (typeof ref === 'string' && ref.startsWith('$')) {
+              const key = ref.slice(1);
+              if (tBlocks[key]) finalContent = tBlocks[key];
+            } else if (typeof ref === 'string' && ref.trim()) {
+              finalContent = ref;
+            }
+          }
+        }
+        if (finalContent) {
+          result.push({ role: 'assistant', content: finalContent });
         }
       }
     }

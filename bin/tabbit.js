@@ -64,4 +64,33 @@ program
   .description('导出对话历史为 Markdown 文件')
   .action(exportCmd);
 
+program
+  .command('tui')
+  .description('启动终端图形界面（需要 Bun）')
+  .action(() => {
+    const { execSync } = require('child_process');
+    const path = require('path');
+    const os = require('os');
+    // Try to find bun in common locations
+    const bunPaths = [
+      'bun',
+      path.join(os.homedir(), '.bun', 'bin', 'bun'),
+      '/opt/homebrew/bin/bun',
+      '/usr/local/bin/bun',
+    ];
+    let bunCmd = null;
+    for (const p of bunPaths) {
+      try {
+        execSync(`"${p}" --version`, { stdio: 'ignore' });
+        bunCmd = p;
+        break;
+      } catch {}
+    }
+    if (!bunCmd) {
+      console.error('TUI 需要 Bun 运行时。安装: curl -fsSL https://bun.sh/install | bash');
+      process.exit(1);
+    }
+    execSync(`"${bunCmd}" run bin/tui.tsx`, { stdio: 'inherit', cwd: path.resolve(__dirname, '..') });
+  });
+
 program.parse();
