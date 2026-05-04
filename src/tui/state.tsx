@@ -17,6 +17,7 @@ import {
 export interface Message {
   role: 'user' | 'assistant'
   content: string
+  thinking?: string
 }
 
 export interface Session {
@@ -213,14 +214,56 @@ export function TuiProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        // Add placeholder assistant message for streaming updates
+        setMessages((prev) => [...prev, { role: 'assistant', content: '', thinking: '' }])
+
         const response = await sendMessage(sid!, content, cookieRef.current!, currentModel)
-        const raw = String(await parseSSEStream(response) ?? '')
+        const result = await parseSSEStream(response, (chunk: { type: string; text: string }) => {
+          if (!mountedRef.current) return
+          if (chunk.type === 'thinking') {
+            setMessages((prev) => {
+              const updated = [...prev]
+              const last = updated[updated.length - 1]
+              if (last && last.role === 'assistant') {
+                updated[updated.length - 1] = { ...last, thinking: (last.thinking || '') + chunk.text }
+              }
+              return updated
+            })
+          } else if (chunk.type === 'content') {
+            setMessages((prev) => {
+              const updated = [...prev]
+              const last = updated[updated.length - 1]
+              if (last && last.role === 'assistant') {
+                updated[updated.length - 1] = { ...last, content: last.content + chunk.text }
+              }
+              return updated
+            })
+          }
+        })
 
         if (!mountedRef.current) return
+        const raw = typeof result === 'object' ? result.content : String(result ?? '')
+        const thinking = typeof result === 'object' ? result.thinking : ''
+
+        // Update final content if needed
         if (raw.trim()) {
-          setMessages((prev) => [...prev, { role: 'assistant', content: raw }])
+          setMessages((prev) => {
+            const updated = [...prev]
+            const last = updated[updated.length - 1]
+            if (last && last.role === 'assistant') {
+              updated[updated.length - 1] = { ...last, content: raw, thinking: thinking || last.thinking }
+            }
+            return updated
+          })
         } else {
-          setMessages((prev) => [...prev, { role: 'assistant', content: '(无回复内容)' }])
+          setMessages((prev) => {
+            const updated = [...prev]
+            const last = updated[updated.length - 1]
+            if (last && last.role === 'assistant' && !last.content) {
+              updated[updated.length - 1] = { ...last, content: '(无回复内容)' }
+            }
+            return updated
+          })
         }
       } catch (err: any) {
         if (mountedRef.current) setError(err.message)

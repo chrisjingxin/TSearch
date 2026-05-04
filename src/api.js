@@ -182,17 +182,18 @@ async function sendMessage(sessionId, content, cookieHeader, model = '最佳') {
   return res;
 }
 
-function parseSSEStream(response) {
+function parseSSEStream(response, onChunk) {
   return new Promise((resolve, reject) => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
     let currentEvent = '';
     const texts = [];
+    const thinkingParts = [];
 
     function processChunk({ done, value }) {
       if (done) {
-        resolve(texts.join(''));
+        resolve({ content: texts.join(''), thinking: thinkingParts.join('') });
         return;
       }
 
@@ -207,8 +208,18 @@ function parseSSEStream(response) {
           const dataStr = line.slice(5).trim();
           try {
             const data = JSON.parse(dataStr);
+            // Extract thinking/reasoning content
+            const thinking = data.reasoning_content ?? data.delta?.reasoning_content ?? data.message?.reasoning_content ?? '';
+            if (thinking) {
+              thinkingParts.push(thinking);
+              if (onChunk) onChunk({ type: 'thinking', text: thinking });
+            }
+            // Extract regular content
             const chunk = data.text ?? data.content ?? data.delta?.content ?? data.message?.content ?? '';
-            if (chunk) texts.push(chunk);
+            if (chunk) {
+              texts.push(chunk);
+              if (onChunk) onChunk({ type: 'content', text: chunk });
+            }
           } catch {
             // non-JSON data line, skip
           }
@@ -247,7 +258,8 @@ async function search(query, opts = {}) {
     const response = await sendMessage(sessionId, query, cookieHeader, model);
 
     // Step 3: Parse SSE stream
-    const raw = await parseSSEStream(response);
+    const result = await parseSSEStream(response);
+    const raw = typeof result === 'object' ? result.content : String(result ?? '');
     spinner.stop();
 
     // Step 4: Render markdown
@@ -363,6 +375,7 @@ async function fetchMessages(sessionId) {
         // Find the last assistant sub-message with a T block reference (the final reply)
         const subMessages = msg.messages || [];
         let finalContent = '';
+        let thinkingContent = '';
         for (const sub of subMessages) {
           if (sub.type === 'assistant' && sub.content) {
             const ref = sub.content;
@@ -373,9 +386,15 @@ async function fetchMessages(sessionId) {
               finalContent = ref;
             }
           }
+          // Extract reasoning/thinking content if present
+          if (sub.type === 'assistant' && sub.reasoning_content) {
+            thinkingContent = sub.reasoning_content;
+          }
         }
         if (finalContent) {
-          result.push({ role: 'assistant', content: finalContent });
+          const entry = { role: 'assistant', content: finalContent };
+          if (thinkingContent) entry.thinking = thinkingContent;
+          result.push(entry);
         }
       }
     }

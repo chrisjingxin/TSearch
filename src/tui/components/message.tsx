@@ -19,19 +19,25 @@ export function UserMessage({ content }: { content: string }) {
   )
 }
 
-export function AssistantMessage({ content }: { content: string }) {
+export function AssistantMessage({ content, thinking }: { content: string; thinking?: string }) {
   const text = typeof content === 'string' ? content : String(content)
-  if (!text || text === '(无回复内容)') {
-    return (
-      <box paddingLeft={3} paddingTop={1} paddingBottom={1}>
-        <text fg={theme.textMuted}>(无回复内容)</text>
-      </box>
-    )
-  }
+  const thinkingText = typeof thinking === 'string' ? thinking : ''
 
   return (
-    <box paddingLeft={3} paddingTop={1} paddingBottom={1}>
-      <markdown content={text} syntaxStyle={getMarkdownSyntaxStyle()} fg={theme.text} />
+    <box flexDirection="column" paddingLeft={3} paddingTop={1} paddingBottom={1}>
+      {/* Thinking/reasoning section */}
+      {thinkingText ? (
+        <box flexDirection="column" border={['left']} borderColor={theme.border} paddingLeft={1}>
+          <text fg={theme.textMuted}>{'💭 思考过程'}</text>
+          <text fg={theme.textMuted} wrap>{thinkingText}</text>
+        </box>
+      ) : null}
+      {/* Main content */}
+      {(!text || text === '(无回复内容)') ? (
+        <text fg={theme.textMuted}>(无回复内容)</text>
+      ) : (
+        <markdown content={text} syntaxStyle={getMarkdownSyntaxStyle()} fg={theme.text} />
+      )}
     </box>
   )
 }
@@ -40,5 +46,5 @@ export function MessageBubble({ message }: { message: Message }) {
   if (message.role === 'user') {
     return <UserMessage content={message.content} />
   }
-  return <AssistantMessage content={message.content} />
+  return <AssistantMessage content={message.content} thinking={message.thinking} />
 }

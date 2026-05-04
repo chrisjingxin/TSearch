@@ -53,11 +53,6 @@ export function SessionView() {
           {messages.map((msg, i) => (
             <MessageBubble key={`${msg.role}-${i}`} message={msg} />
           ))}
-          {isLoading && (
-            <box paddingLeft={3} paddingTop={1} paddingBottom={1}>
-              <text fg={theme.textMuted}>⠋ thinking...</text>
-            </box>
-          )}
           {error && (
             <box paddingLeft={3} paddingTop={1}>
               <text fg={theme.error}>✗ {error}</text>
