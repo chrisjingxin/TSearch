@@ -50,11 +50,9 @@ export function getMarkdownSyntaxStyle(): SyntaxStyle {
   // Links
   style.registerStyle('markup.link', {
     fg: '#60a5fa',
-    underline: true,
   })
   style.registerStyle('markup.link.url', {
     fg: '#60a5fa',
-    underline: true,
   })
   style.registerStyle('markup.link.label', {
     fg: '#60a5fa',
