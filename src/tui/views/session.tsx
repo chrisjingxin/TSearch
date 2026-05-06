@@ -39,7 +39,7 @@ export function SessionView() {
           flexShrink={0}
         >
           <text fg={theme.text} attributes={1}>
-            {(sessionTitle || 'Session') + '  — Tabbit'}
+            {(sessionTitle || 'Session') + '  — TSearch'}
           </text>
         </box>
 

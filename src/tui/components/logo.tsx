@@ -2,21 +2,21 @@ import React from 'react'
 import { theme } from '../theme'
 
 const LOGO_ART = [
-  '████████╗ ██████╗  ██████╗ ██████╗ ██╗████████╗',
-  '╚══██╔══╝██╔══██╗██╔═══██╗██╔══██╗██║╚══██╔══╝',
-  '   ██║   ██████╔╝██║   ██║██████╔╝██║   ██║   ',
-  '   ██║   ██╔══██╗██║   ██║██╔══██╗██║   ██║   ',
-  '   ██║   ██████╔╝╚██████╔╝██████╔╝██║   ██║   ',
-  '   ╚═╝   ╚═════╝  ╚═════╝ ╚═════╝ ╚═╝   ╚═╝   ',
+  '████████╗ ███████╗███████╗ █████╗ ██████╗  ██████╗██╗  ██╗',
+  '╚══██╔══╝ ██╔════╝██╔════╝██╔══██╗██╔══██╗██╔════╝██║  ██║',
+  '   ██║    ███████╗█████╗  ███████║██████╔╝██║     ███████║',
+  '   ██║    ╚════██║██╔══╝  ██╔══██║██╔══██╗██║     ██╔══██║',
+  '   ██║    ███████║███████╗██║  ██║██║  ██║╚██████╗██║  ██║',
+  '   ╚═╝    ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝',
 ]
 
-const TAGLINE = 'Browser assistant in your terminal'
+const TAGLINE = 'Search engine powered by AI'
 
 export function Logo({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <box flexDirection="column" alignItems="center">
-        <text fg={theme.primary} attributes={1}>Tabbit</text>
+        <text fg={theme.primary} attributes={1}>TSearch</text>
       </box>
     )
   }
