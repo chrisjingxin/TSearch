@@ -1,8 +1,10 @@
 # Tabbit CLI
 
-[English](#english) | [中文](#中文)
+<a href="#english">English</a> | <a href="#中文">中文</a>
 
 ---
+
+<a id="english"></a>
 
 ## English
 
@@ -110,6 +112,8 @@ All data is stored locally in `~/.tabbit/`:
 MIT
 
 ---
+
+<a id="中文"></a>
 
 ## 中文
 
