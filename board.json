@@ -4,9 +4,9 @@
       "id": "TF-001",
       "title": "验证账本",
       "priority": "P1",
-      "status": "待认领",
-      "owner": "-",
-      "branch": "-"
+      "status": "进行中",
+      "owner": "chrisjingxin",
+      "branch": "feat/demo"
     }
   ],
   "completed": []
